@@ -1,28 +1,37 @@
 
-const {ccclass, property} = cc._decorator;
+import { _decorator, Component } from 'cc';
+const { ccclass, property } = _decorator;
 
-@ccclass
-export default class DelayLoad extends cc.Component {
+@ccclass('DelayLoad')
+export class DelayLoad extends Component {
 
-    private _finishCallback: Function;
-    private _gen: Generator;
+    private _finishCallback: Function = null!;
+    private _gen: Generator = null!;
+    private _state: IteratorResult<unknown, any> = null!;
 
-    init(gen: Generator, finishCb: ()=>{}, interval = 0.01){
+    public init(gen: Generator, finishCb: () => void = ()=>{}, interval = 0.01): DelayLoad {
         this._gen = gen;
         this._finishCallback = finishCb;
         this.updateFunc();
         this.schedule(this.updateFunc, interval);
+
+        return this;
     }
 
-
-    updateFunc(){
-        let state = this._gen.next();
-        if(state.done) {
+    public updateFunc() {
+        this._state = this._gen.next(this);
+        if (this._state.done) {
             this.unscheduleAllCallbacks();
             this._finishCallback();
             return;
         }
     }
-   
-}
 
+    public GetState(): IteratorResult<unknown, any> {
+        return this._state;
+    }
+
+    public IsDone(): boolean {
+        return !!this.GetState().done;
+    }
+}
